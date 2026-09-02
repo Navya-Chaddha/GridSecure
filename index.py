@@ -29,6 +29,7 @@ class ConsumerRequest(BaseModel):
     Zero_Consumption_Days: int = 22
     Sudden_Drop_Days: int = 5
     Behavioural_Anomaly_Score: float = 0.78
+    Behaviour_Cluster: int = 1
     model_name: Optional[str] = "Random Forest"
 
 
@@ -20452,7 +20453,6 @@ def search_gz_dataset(cons_str: str):
     if not os.path.exists(DATA_DIR):
         return None
 
-    # Search across part1.csv.gz, part2.csv.gz, part3.csv.gz, part4.csv.gz, data.csv.gz
     part_files = [f for f in os.listdir(DATA_DIR) if f.endswith(".csv.gz")]
     part_files.sort()
 
@@ -20467,6 +20467,7 @@ def search_gz_dataset(cons_str: str):
                         zero_d = min(int(float(row.get("Zero_Consumption_Days", 0) or 0)), 30)
                         drop_d = min(int(float(row.get("Sudden_Drop_Days", 0) or 0)), 15)
                         anom_s = round(float(row.get("Behavioural_Anomaly_Score", 0.5) or 0.5), 2)
+                        cluster = int(float(row.get("Behaviour_Cluster", 0) or 0))
                         theft_f = int(float(row.get("Theft_Flag", 0) or 0))
                         
                         loc_val = row.get("Locality", "KOLKATA_EAST")
@@ -20488,6 +20489,7 @@ def search_gz_dataset(cons_str: str):
                             "Zero_Consumption_Days": zero_d,
                             "Sudden_Drop_Days": drop_d,
                             "Behavioural_Anomaly_Score": anom_s,
+                            "Behaviour_Cluster": cluster,
                             "Theft_Flag": theft_f
                         }
         except Exception:
@@ -20512,6 +20514,7 @@ def get_consumer_record(cons_str: str):
     sudden_drops = (h >> 7) % 7
     avg_usage = round(10.0 + ((h >> 10) % 850) / 10.0, 1)
     anomaly_score = round(min(max((zero_days / 28.0) * 0.6 + ((h >> 14) % 40) / 100.0, 0.05), 0.95), 2)
+    cluster = 1 if zero_days > 15 else 0
     theft_flag = 1 if (zero_days > 14 or anomaly_score > 0.65) else 0
 
     return {
@@ -20529,6 +20532,7 @@ def get_consumer_record(cons_str: str):
         "Zero_Consumption_Days": zero_days,
         "Sudden_Drop_Days": sudden_drops,
         "Behavioural_Anomaly_Score": anomaly_score,
+        "Behaviour_Cluster": cluster,
         "Theft_Flag": theft_flag
     }
 
@@ -20536,7 +20540,23 @@ def get_consumer_record(cons_str: str):
 def compute_prediction(rec, model_name="Random Forest"):
     zero_days = int(rec.get("Zero_Consumption_Days", 0) or 0)
     anomaly = float(rec.get("Behavioural_Anomaly_Score", 0.5) or 0.5)
-    prob = min(max(zero_days / 30.0 * 0.4 + anomaly * 0.6, 0.05), 0.98)
+    sudden_drops = int(rec.get("Sudden_Drop_Days", 0) or rec.get("Sudden_Drop_Events", 0) or 0)
+    cluster = int(rec.get("Behaviour_Cluster", 0) or rec.get("Behavior_Cluster", 0) or 0)
+    avg_usage = float(rec.get("Avg_Consumption", 18.5) or rec.get("Avg_Usage", 18.5) or 18.5)
+
+    cluster_weights = {1: 1.0, 4: 0.75, 5: 0.7, 2: 0.3, 3: 0.2, 0: 0.1}
+    c_weight = cluster_weights.get(cluster, 0.3)
+    usage_weight = 0.8 if avg_usage < 5.0 else (0.4 if avg_usage < 15.0 else 0.1)
+
+    prob = (
+        (anomaly * 0.35) +
+        (min(zero_days / 30.0, 1.0) * 0.30) +
+        (min(sudden_drops / 15.0, 1.0) * 0.15) +
+        (c_weight * 0.10) +
+        (usage_weight * 0.10)
+    )
+
+    prob = min(max(prob, 0.05), 0.98)
     pred = 1 if prob >= 0.5 else 0
 
     if prob >= 0.75:
@@ -20557,12 +20577,20 @@ def compute_prediction(rec, model_name="Random Forest"):
     if anomaly > 0.60:
         reasons.append(f"High behavioral anomaly score ({anomaly:.2f}).")
 
+    if sudden_drops > 5:
+        reasons.append(f"Frequent sudden consumption drop events ({sudden_drops} events).")
+
+    if c_weight >= 0.7:
+        reasons.append(f"Assigned to high-risk behavioral load cluster (Cluster {cluster}).")
+
     if not reasons:
         reasons.append("Normal consumption pattern consistent with compliant usage.")
 
     drivers = [
-        {"feature": "Zero Consumption Days", "value": zero_days, "impact": "High Driver", "z_score": 2.5},
-        {"feature": "Behavioural Anomaly Score", "value": anomaly, "impact": "High Driver", "z_score": 2.1}
+        {"feature": "Zero Consumption Days", "value": zero_days, "impact": "High Driver" if zero_days > 10 else "Low Driver", "z_score": 2.5 if zero_days > 10 else 0.5},
+        {"feature": "Behavioural Anomaly Score", "value": anomaly, "impact": "High Driver" if anomaly > 0.5 else "Low Driver", "z_score": 2.1 if anomaly > 0.5 else 0.4},
+        {"feature": "Sudden Drop Events", "value": sudden_drops, "impact": "High Driver" if sudden_drops > 5 else "Low Driver", "z_score": 1.8 if sudden_drops > 5 else 0.3},
+        {"feature": "Behavior Cluster", "value": cluster, "impact": "High Driver" if c_weight >= 0.7 else "Low Driver", "z_score": 1.5 if c_weight >= 0.7 else 0.2}
     ]
 
     return {
