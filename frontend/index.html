@@ -279,8 +279,15 @@
                 </div>
 
                 <div class="form-group">
-                  <label for="rf_cluster" class="form-label">Behavior Cluster</label>
-                  <input type="number" id="rf_cluster" class="form-input" value="1" min="0" max="5" required>
+                  <label for="rf_cluster" class="form-label">Behavior Cluster Profile</label>
+                  <select id="rf_cluster" class="form-select">
+                    <option value="1" selected>Cluster 1 — Zero-Consumption Tampering (Critical Risk)</option>
+                    <option value="0">Cluster 0 — Normal / Compliant Usage (Low Risk)</option>
+                    <option value="2">Cluster 2 — Heavy Commercial / High Load (Moderate Risk)</option>
+                    <option value="3">Cluster 3 — Seasonal / Intermittent Usage (Low Risk)</option>
+                    <option value="4">Cluster 4 — Partial Meter Bypass / Drop (High Risk)</option>
+                    <option value="5">Cluster 5 — Low Consumption Anomaly (High Risk)</option>
+                  </select>
                 </div>
               </div>
 
