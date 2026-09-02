@@ -8,7 +8,7 @@ const API_BASE_URL = (window.location.hostname === '127.0.0.1' || window.locatio
   : window.location.origin;
 
 const state = {
-  activeTab: 'map',
+  activeTab: 'overview',
   apiConnected: false,
   map: null,
   mapMarkers: [],
@@ -30,7 +30,7 @@ const state = {
 
 document.addEventListener('DOMContentLoaded', () => {
   initISTClock();
-  initIndiaGISMap();
+  if (document.getElementById('mapView')) initIndiaGISMap();
   renderZoneList();
   renderOverviewChart();
   checkAPIHealth();
