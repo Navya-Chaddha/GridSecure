@@ -20553,6 +20553,10 @@ def compute_prediction(rec, model_name="Random Forest"):
         tariff_weight = 0.12
     elif cons_type.lower() == "industrial" and avg_usage < 15.0:
         tariff_weight = 0.10
+    elif cons_type.lower() == "commercial" and avg_usage > 90.0:
+        tariff_weight = 0.12
+    elif cons_type.lower() == "commercial" and avg_usage < 8.0:
+        tariff_weight = 0.10
     elif avg_usage < 5.0:
         tariff_weight = 0.08
 
@@ -20596,6 +20600,10 @@ def compute_prediction(rec, model_name="Random Forest"):
         reasons.append(f"High daily usage ({avg_usage} kWh) for Residential tariff rate (possible unauthorized commercial operation).")
     elif cons_type.lower() == "industrial" and avg_usage < 15.0:
         reasons.append(f"Unusually low daily consumption ({avg_usage} kWh) for Industrial tariff (possible CT secondary wiring tampering).")
+    elif cons_type.lower() == "commercial" and avg_usage > 90.0:
+        reasons.append(f"High daily usage ({avg_usage} kWh) for Commercial tariff rate (possible unregistered heavy industrial operation).")
+    elif cons_type.lower() == "commercial" and avg_usage < 8.0:
+        reasons.append(f"Unusually low daily consumption ({avg_usage} kWh) for Commercial tariff (possible cooling load / CT bypass tampering).")
 
     if not reasons:
         reasons.append("Normal consumption pattern consistent with compliant usage.")
