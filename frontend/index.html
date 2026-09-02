@@ -31,16 +31,7 @@
       </div>
 
       <nav class="nav-list">
-        <button class="nav-link active" onclick="switchTab('map', this)">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon>
-            <line x1="8" y1="2" x2="8" y2="18"></line>
-            <line x1="16" y1="6" x2="16" y2="22"></line>
-          </svg>
-          <span>India GIS Map</span>
-        </button>
-
-        <button class="nav-link" onclick="switchTab('overview', this)">
+        <button class="nav-link active" onclick="switchTab('overview', this)">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <rect x="3" y="3" width="7" height="7" rx="1"></rect>
             <rect x="14" y="3" width="7" height="7" rx="1"></rect>
@@ -94,7 +85,7 @@
       <header class="app-header">
         <div class="header-titles">
           <span class="breadcrumb-text">GRIDSECURE / OPERATIONS</span>
-          <h1 id="pageTitle" class="header-h1">India National Grid GIS Map</h1>
+          <h1 id="pageTitle" class="header-h1">System Dashboard</h1>
         </div>
 
         <div class="header-controls">
@@ -110,77 +101,8 @@
         </div>
       </header>
 
-      <!-- View 1: India GIS Map -->
-      <section id="tab-map" class="content-page active">
-        <div class="map-grid-layout">
-          <div class="panel-card map-card">
-            <div class="panel-header">
-              <div>
-                <span class="pill-label">LIVE TELEMETRY</span>
-                <h2 class="panel-title">Regional Power Distribution Substations</h2>
-              </div>
-              <div class="panel-actions">
-                <button class="btn btn-sm active" onclick="setMapFilter('all', this)">All Grids</button>
-                <button class="btn btn-sm" onclick="setMapFilter('high', this)">Critical Only</button>
-                <button class="btn btn-sm" onclick="resetMapView()">Center Map</button>
-              </div>
-            </div>
-            <div id="mapView" class="map-viewport"></div>
-            <div class="map-legend-bar">
-              <div class="legend-entry"><span class="dot red"></span> Critical (>25% Theft)</div>
-              <div class="legend-entry"><span class="dot amber"></span> Moderate (10-25%)</div>
-              <div class="legend-entry"><span class="dot green"></span> Normal (<10%)</div>
-              <div class="legend-entry"><span class="line gray"></span> Inter-State Feeder Corridor</div>
-            </div>
-          </div>
-
-          <div class="map-side-column">
-            <div class="panel-card mb-12">
-              <h3 class="panel-title mb-8">42,372 Meter Hotspot Density</h3>
-              <div class="model-select-card" style="margin-bottom: 0;">
-                <label class="form-label" style="font-size: 8px;">GEOSPATIAL RISK OVERLAY</label>
-                <select id="mapOverlaySelect" class="form-select" onchange="switchMapOverlay(this.value)">
-                  <option value="hotspot_substations" selected>📍 Substation Grid Nodes (5 Regions)</option>
-                  <option value="heatmap_all">🔥 Heatmap: All 42,372 Smart Meters</option>
-                  <option value="hotspot_critical">🔴 Theft Hotspots: Critical Cases (3,615)</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="panel-card">
-              <h3 class="panel-title mb-12">Regional Substation Status</h3>
-              <div class="substation-list" id="zoneListContainer">
-                <!-- Populated via JS -->
-              </div>
-            </div>
-
-            <div class="panel-card">
-              <h3 class="panel-title mb-12">Grid Infrastructure Telemetry</h3>
-              <div class="metrics-mini-grid">
-                <div class="telemetry-box">
-                  <span class="box-label">REGIONAL ZONES</span>
-                  <span class="box-val">5 GRIDS</span>
-                </div>
-                <div class="telemetry-box alert">
-                  <span class="box-label">FLAGGED CASES</span>
-                  <span class="box-val red-text" id="mapFlaggedCount">3,615</span>
-                </div>
-                <div class="telemetry-box warning">
-                  <span class="box-label">EST. LOSS</span>
-                  <span class="box-val amber-text">2.85 GWh</span>
-                </div>
-                <div class="telemetry-box">
-                  <span class="box-label">ACTIVE ENGINES</span>
-                  <span class="box-val">3 MODELS</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- View 2: System Overview -->
-      <section id="tab-overview" class="content-page">
+      <!-- View: System Overview Dashboard -->
+      <section id="tab-overview" class="content-page active">
         <div class="stats-row">
           <div class="stat-card">
             <span class="stat-label">TOTAL SMART METERS</span>
