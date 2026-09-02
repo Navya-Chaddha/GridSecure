@@ -20633,7 +20633,10 @@ def analytics():
 
 @app.get("/sample-consumers")
 def sample_consumers(limit: int = 10):
-    return {"consumer_ids": list(SAMPLE_DATABASE.keys())[:limit]}
+    clean_keys = [k for k in SAMPLE_DATABASE.keys() if k.startswith("CONS_")]
+    if len(clean_keys) < limit:
+        clean_keys = list(SAMPLE_DATABASE.keys())
+    return {"consumer_ids": clean_keys[:limit]}
 
 
 @app.get("/consumer/{consumer_id}")
