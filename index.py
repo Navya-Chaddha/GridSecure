@@ -20543,17 +20543,26 @@ def compute_prediction(rec, model_name="Random Forest"):
     sudden_drops = int(rec.get("Sudden_Drop_Days", 0) or rec.get("Sudden_Drop_Events", 0) or 0)
     cluster = int(rec.get("Behaviour_Cluster", 0) or rec.get("Behavior_Cluster", 0) or 0)
     avg_usage = float(rec.get("Avg_Consumption", 18.5) or rec.get("Avg_Usage", 18.5) or 18.5)
+    cons_type = str(rec.get("Consumer_Type", "Residential") or "Residential").strip()
 
     cluster_weights = {1: 1.0, 4: 0.75, 5: 0.7, 2: 0.3, 3: 0.2, 0: 0.1}
     c_weight = cluster_weights.get(cluster, 0.3)
-    usage_weight = 0.8 if avg_usage < 5.0 else (0.4 if avg_usage < 15.0 else 0.1)
+
+    tariff_weight = 0.0
+    if cons_type.lower() == "residential" and avg_usage > 50.0:
+        tariff_weight = 0.12
+    elif cons_type.lower() == "industrial" and avg_usage < 15.0:
+        tariff_weight = 0.10
+    elif avg_usage < 5.0:
+        tariff_weight = 0.08
 
     prob = (
-        (anomaly * 0.35) +
-        (min(zero_days / 30.0, 1.0) * 0.30) +
+        (anomaly * 0.32) +
+        (min(zero_days / 30.0, 1.0) * 0.28) +
         (min(sudden_drops / 15.0, 1.0) * 0.15) +
         (c_weight * 0.10) +
-        (usage_weight * 0.10)
+        tariff_weight +
+        (0.05 if avg_usage < 5.0 else 0.0)
     )
 
     prob = min(max(prob, 0.05), 0.98)
@@ -20583,6 +20592,11 @@ def compute_prediction(rec, model_name="Random Forest"):
     if c_weight >= 0.7:
         reasons.append(f"Assigned to high-risk behavioral load cluster (Cluster {cluster}).")
 
+    if cons_type.lower() == "residential" and avg_usage > 50.0:
+        reasons.append(f"High daily usage ({avg_usage} kWh) for Residential tariff rate (possible unauthorized commercial operation).")
+    elif cons_type.lower() == "industrial" and avg_usage < 15.0:
+        reasons.append(f"Unusually low daily consumption ({avg_usage} kWh) for Industrial tariff (possible CT secondary wiring tampering).")
+
     if not reasons:
         reasons.append("Normal consumption pattern consistent with compliant usage.")
 
@@ -20592,6 +20606,9 @@ def compute_prediction(rec, model_name="Random Forest"):
         {"feature": "Sudden Drop Events", "value": sudden_drops, "impact": "High Driver" if sudden_drops > 5 else "Low Driver", "z_score": 1.8 if sudden_drops > 5 else 0.3},
         {"feature": "Behavior Cluster", "value": cluster, "impact": "High Driver" if c_weight >= 0.7 else "Low Driver", "z_score": 1.5 if c_weight >= 0.7 else 0.2}
     ]
+
+    if tariff_weight > 0:
+        drivers.append({"feature": "Tariff Anomaly", "value": f"{avg_usage} kWh ({cons_type})", "impact": "High Driver", "z_score": 2.2})
 
     return {
         "consumer_id": rec.get("CONS_NO", "UNKNOWN"),
