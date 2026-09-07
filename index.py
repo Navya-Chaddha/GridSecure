@@ -20545,6 +20545,24 @@ def compute_prediction(rec, model_name="Random Forest"):
     avg_usage = float(rec.get("Avg_Consumption", 18.5) or rec.get("Avg_Usage", 18.5) or 18.5)
     cons_type = str(rec.get("Consumer_Type", "Residential") or "Residential").strip()
 
+    model_str = str(model_name or "Random Forest").strip()
+
+    if "Decision Tree" in model_str:
+        w_anomaly = 0.25
+        w_zero = 0.40
+        w_drop = 0.12
+        w_cluster = 0.08
+    elif "Logistic Regression" in model_str:
+        w_anomaly = 0.30
+        w_zero = 0.25
+        w_drop = 0.18
+        w_cluster = 0.12
+    else:
+        w_anomaly = 0.32
+        w_zero = 0.28
+        w_drop = 0.15
+        w_cluster = 0.10
+
     cluster_weights = {1: 1.0, 4: 0.75, 5: 0.7, 2: 0.3, 3: 0.2, 0: 0.1}
     c_weight = cluster_weights.get(cluster, 0.3)
 
@@ -20561,10 +20579,10 @@ def compute_prediction(rec, model_name="Random Forest"):
         tariff_weight = 0.08
 
     prob = (
-        (anomaly * 0.32) +
-        (min(zero_days / 30.0, 1.0) * 0.28) +
-        (min(sudden_drops / 15.0, 1.0) * 0.15) +
-        (c_weight * 0.10) +
+        (anomaly * w_anomaly) +
+        (min(zero_days / 30.0, 1.0) * w_zero) +
+        (min(sudden_drops / 15.0, 1.0) * w_drop) +
+        (c_weight * w_cluster) +
         tariff_weight +
         (0.05 if avg_usage < 5.0 else 0.0)
     )
@@ -20623,7 +20641,7 @@ def compute_prediction(rec, model_name="Random Forest"):
         "prediction": pred,
         "probability": round(prob, 4),
         "risk_level": risk_level,
-        "model_name": model_name or "Random Forest",
+        "model_name": model_str,
         "reasons": reasons,
         "drivers": drivers,
         "features": rec,
