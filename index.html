@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GridSecure | Enterprise Electricity Theft Intelligence</title>
+  
+  <!-- Typography: Inter & IBM Plex Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Leaflet GIS Engine -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <div class="app-layout">
+    <!-- Sidebar Navigation -->
+    <aside class="app-sidebar">
+      <div class="brand-header">
+        <div class="brand-symbol">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+          </svg>
+        </div>
+        <div class="brand-titles">
+          <span class="brand-title">GRIDSECURE</span>
+          <span class="brand-subtitle">ENTERPRISE MONITORING</span>
+        </div>
+      </div>
+
+      <nav class="nav-list">
+        <button class="nav-link active" onclick="switchTab('overview', this)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="7" height="7" rx="1"></rect>
+            <rect x="14" y="3" width="7" height="7" rx="1"></rect>
+            <rect x="14" y="14" width="7" height="7" rx="1"></rect>
+            <rect x="3" y="14" width="7" height="7" rx="1"></rect>
+          </svg>
+          <span>Overview</span>
+        </button>
+
+        <button class="nav-link" onclick="switchTab('investigation', this)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <span>Consumer Intel</span>
+        </button>
+
+        <button class="nav-link" onclick="switchTab('risk', this)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+            <line x1="12" y1="9" x2="12" y2="13"></line>
+            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+          </svg>
+          <span>Risk Inference</span>
+        </button>
+
+        <button class="nav-link" onclick="switchTab('analytics', this)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="20" x2="18" y2="10"></line>
+            <line x1="12" y1="20" x2="12" y2="4"></line>
+            <line x1="6" y1="20" x2="6" y2="14"></line>
+          </svg>
+          <span>Model Metrics</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-status-box">
+        <div class="status-indicator">
+          <span class="status-dot green" id="statusDot"></span>
+          <span class="status-label" id="statusText">API ONLINE</span>
+        </div>
+        <div class="status-details">
+          <span id="endpointText">ENDPOINT: LIVE CLOUD API</span>
+          <span>MODELS: 3 TRAINED</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Workspace -->
+    <div class="app-main">
+      <header class="app-header">
+        <div class="header-titles">
+          <span class="breadcrumb-text">GRIDSECURE / OPERATIONS</span>
+          <h1 id="pageTitle" class="header-h1">System Dashboard</h1>
+        </div>
+
+        <div class="header-controls">
+          <div class="header-search">
+            <input type="text" id="globalSearchInput" placeholder="Search Consumer ID..." onkeyup="handleGlobalSearchKey(event)">
+            <button class="btn btn-sm" onclick="triggerGlobalSearch()">GO</button>
+          </div>
+
+          <div class="clock-display">
+            <span class="clock-title">TIME (IST)</span>
+            <span id="istClock" class="clock-time">00:00:00 IST</span>
+          </div>
+        </div>
+      </header>
+
+      <!-- View: System Overview Dashboard -->
+      <section id="tab-overview" class="content-page active">
+        <div class="stats-row">
+          <div class="stat-card">
+            <span class="stat-label">TOTAL SMART METERS</span>
+            <span class="stat-value" id="statTotalConsumers">42,372</span>
+            <span class="stat-sub">Active fleet monitored</span>
+          </div>
+
+          <div class="stat-card alert">
+            <span class="stat-label">FLAGGED THEFT ANOMALIES</span>
+            <span class="stat-value red-text" id="statTheftCases">3,615</span>
+            <span class="stat-sub" id="statTheftRate">8.53% overall theft baseline</span>
+          </div>
+
+          <div class="stat-card success">
+            <span class="stat-label">COMPLIANT USAGE</span>
+            <span class="stat-value green-text" id="statNormalCases">38,757</span>
+            <span class="stat-sub">Normal consumption profiles</span>
+          </div>
+
+          <div class="stat-card">
+            <span class="stat-label">TRAINED CLASSIFIERS</span>
+            <span class="stat-value">3 Models</span>
+            <span class="stat-sub">RF, Decision Tree, Logistic</span>
+          </div>
+        </div>
+
+        <div class="split-2col mt-16">
+          <div class="panel-card">
+            <div class="panel-header">
+              <h2 class="panel-title">Non-Technical Loss (NTL) Trend</h2>
+              <span class="status-badge gray">MONTHLY AGGREGATE</span>
+            </div>
+            <div class="chart-box" id="overviewChart"></div>
+          </div>
+
+          <div class="panel-card">
+            <div class="panel-header">
+              <h2 class="panel-title">Global Feature Weight Ranking</h2>
+              <span class="status-badge gray">TREE IMPORTANCE</span>
+            </div>
+            <div class="feature-rankings">
+              <div class="rank-row">
+                <div class="rank-meta"><span>Behavioural Anomaly Score</span><span>28.4%</span></div>
+                <div class="rank-track"><div class="rank-fill red" style="width: 85%;"></div></div>
+              </div>
+              <div class="rank-row">
+                <div class="rank-meta"><span>Zero Consumption Days</span><span>22.1%</span></div>
+                <div class="rank-track"><div class="rank-fill red" style="width: 72%;"></div></div>
+              </div>
+              <div class="rank-row">
+                <div class="rank-meta"><span>Sudden Drop Days</span><span>17.6%</span></div>
+                <div class="rank-track"><div class="rank-fill amber" style="width: 58%;"></div></div>
+              </div>
+              <div class="rank-row">
+                <div class="rank-meta"><span>Long Term Shift</span><span>14.3%</span></div>
+                <div class="rank-track"><div class="rank-fill gray" style="width: 46%;"></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel-card mt-16">
+          <div class="panel-header">
+            <h2 class="panel-title">Priority Audit Queue</h2>
+            <span class="status-badge red">ACTION REQUIRED</span>
+          </div>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>CONSUMER ID</th>
+                  <th>SUBSTATION</th>
+                  <th>TYPE</th>
+                  <th>AVG USAGE</th>
+                  <th>ZERO DAYS</th>
+                  <th>ANOMALY SCORE</th>
+                  <th>RISK</th>
+                  <th>ACTIONS</th>
+                </tr>
+              </thead>
+              <tbody id="overviewQueueTable">
+                <!-- Populated via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- View 3: Consumer Intelligence -->
+      <section id="tab-investigation" class="content-page">
+        <div class="panel-card">
+          <div class="search-form-row">
+            <div class="search-input-group">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+              <input type="text" id="investigateInput" placeholder="Enter Consumer ID (e.g. CONS_1001)...">
+            </div>
+            <button class="btn btn-primary" onclick="executeInvestigation()">INSPECT CONSUMER</button>
+          </div>
+          <div class="sample-tags-row mt-12">
+            <span class="tag-label">SAMPLES:</span>
+            <button class="tag-btn" onclick="quickInvestigate('CONS_1001')">CONS_1001 (Kolkata)</button>
+            <button class="tag-btn" onclick="quickInvestigate('CONS_1002')">CONS_1002 (Mumbai)</button>
+            <button class="tag-btn" onclick="quickInvestigate('CONS_1003')">CONS_1003 (Delhi)</button>
+            <button class="tag-btn" onclick="quickInvestigate('CONS_DEMO_1001')">CONS_DEMO_1001 (Bhopal)</button>
+          </div>
+        </div>
+
+        <div id="investigationDetails" class="investigation-container mt-16 hidden">
+          <!-- Dynamic Profile Rendered by JS -->
+        </div>
+
+        <div id="investigationEmpty" class="panel-card empty-panel mt-16">
+          <h3>No Consumer Selected</h3>
+          <p>Enter a consumer ID above or select one of the quick samples to inspect telemetry data and prediction reasoning.</p>
+        </div>
+      </section>
+
+      <!-- View 4: Risk Inference & Model Switcher -->
+      <section id="tab-risk" class="content-page">
+        <div class="split-2col">
+          <div class="panel-card">
+            <div class="panel-header">
+              <h2 class="panel-title">Inference Telemetry Input</h2>
+              <span class="status-badge gray">LIVE CLASSIFIER</span>
+            </div>
+
+            <!-- Model Switcher Selector -->
+            <div class="model-select-card mb-16">
+              <label for="rf_model_select" class="form-label">CLASSIFIER MODEL SELECTOR</label>
+              <select id="rf_model_select" class="form-select" onchange="triggerRiskAssessment()">
+                <option value="Random Forest">Random Forest (Recommended - Best F1: 0.3446, 88.38% Acc)</option>
+                <option value="Decision Tree">Decision Tree (High Recall: 63.07%, F1: 0.2844)</option>
+                <option value="Logistic Regression">Logistic Regression (Linear Baseline - F1: 0.2935)</option>
+              </select>
+            </div>
+
+            <form id="riskForm" onsubmit="event.preventDefault(); triggerRiskAssessment();" class="form-layout">
+              <div class="form-grid-2col">
+                <div class="form-group">
+                  <label for="rf_id" class="form-label">Consumer ID</label>
+                  <input type="text" id="rf_id" class="form-input" value="CONS_DEMO_1001" required>
+                </div>
+
+                <div class="form-group">
+                  <label for="rf_type" class="form-label">Consumer Type</label>
+                  <select id="rf_type" class="form-select">
+                    <option value="Residential">Residential</option>
+                    <option value="Commercial">Commercial</option>
+                    <option value="Industrial">Industrial</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label for="rf_avg" class="form-label">Avg Usage (kWh)</label>
+                  <input type="number" id="rf_avg" class="form-input" step="0.1" value="18.5" required>
+                </div>
+
+                <div class="form-group">
+                  <label for="rf_zero" class="form-label">Zero Consumption Days</label>
+                  <input type="number" id="rf_zero" class="form-input" value="22" required>
+                </div>
+
+                <div class="form-group">
+                  <label for="rf_drop" class="form-label">Sudden Drop Events</label>
+                  <input type="number" id="rf_drop" class="form-input" value="5" required>
+                </div>
+
+                <div class="form-group">
+                  <label for="rf_anomaly" class="form-label">Anomaly Score (0.0 - 1.0)</label>
+                  <input type="number" id="rf_anomaly" class="form-input" step="0.01" min="0" max="1" value="0.78" required>
+                </div>
+
+                <div class="form-group">
+                  <label for="rf_cluster" class="form-label">Behavior Cluster Profile</label>
+                  <select id="rf_cluster" class="form-select">
+                    <option value="1" selected>Cluster 1 — Zero-Consumption Tampering (Critical Risk)</option>
+                    <option value="0">Cluster 0 — Normal / Compliant Usage (Low Risk)</option>
+                    <option value="2">Cluster 2 — Heavy Commercial / High Load (Moderate Risk)</option>
+                    <option value="3">Cluster 3 — Seasonal / Intermittent Usage (Low Risk)</option>
+                    <option value="4">Cluster 4 — Partial Meter Bypass / Drop (High Risk)</option>
+                    <option value="5">Cluster 5 — Low Consumption Anomaly (High Risk)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-actions mt-16">
+                <button type="submit" class="btn btn-primary btn-block">RUN INFERENCE</button>
+              </div>
+            </form>
+          </div>
+
+          <div class="panel-card">
+            <div class="panel-header">
+              <h2 class="panel-title">Model Output & Reasoning</h2>
+              <span class="status-badge gray" id="activeModelBadge">RANDOM FOREST</span>
+            </div>
+            <div id="riskOutput" class="output-container">
+              <div class="idle-state">
+                <p>Submit form above to evaluate telemetry against the active model.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- View 5: Model Metrics -->
+      <section id="tab-analytics" class="content-page">
+        <div class="panel-card">
+          <div class="panel-header">
+            <h2 class="panel-title">Classifier Model Benchmark Comparison</h2>
+            <span class="status-badge green">EVALUATED</span>
+          </div>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>MODEL</th>
+                  <th>ACCURACY</th>
+                  <th>PRECISION</th>
+                  <th>RECALL</th>
+                  <th>F1-SCORE</th>
+                  <th>ROC-AUC</th>
+                  <th>STATUS</th>
+                </tr>
+              </thead>
+              <tbody id="metricsTableBody">
+                <!-- Dynamically loaded -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Model Weightage & Formula Inspector Card -->
+        <div class="panel-card mt-16" id="modelInspectorPanel">
+          <div class="panel-header">
+            <h2 class="panel-title" id="inspectorModelTitle">Model Weightage & Formula Inspector (Click any row above to inspect)</h2>
+            <span class="status-badge blue" id="inspectorModelBadge">RANDOM FOREST</span>
+          </div>
+          <div id="modelInspectorContent" class="p-16">
+            <!-- Rendered dynamically by JS when clicking model rows -->
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <!-- Printable Theft Report Modal -->
+  <div id="reportModal" class="modal-overlay hidden">
+    <div class="modal-card">
+      <div class="modal-actions no-print">
+        <button class="btn btn-primary" onclick="window.print()">PRINT / DOWNLOAD PDF</button>
+        <button class="btn btn-secondary" onclick="closeReportModal()">CLOSE</button>
+      </div>
+      <div id="printableReportBody" class="report-content">
+        <!-- Rendered dynamically by JS -->
+      </div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
